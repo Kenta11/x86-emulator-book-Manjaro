@@ -1,4 +1,11 @@
 /chapter1/section1/casm-c-sample.bin
-
 /chapter1/section3/ndisasm/casm-c-sample.bin
 /chapter1/section3/objdump/casm-c-sample.o
+
+/chapter2/section1/casm-c-sample.o
+/chapter2/section2/casm-c-sample.o
+/chapter2/section3/main.o
+/chapter2/section3/px86
+/chapter2/section3/helloworld.bin
+/chapter2/section5/evil/evil.o
+/chapter2/section5/undefined-behavior/casm-c-sample.o
