@@ -13,6 +13,7 @@
 /chapter3/section02/*.bin
 /chapter3/section02/*.o
 /chapter3/section02/px86
+/chapter3/section04/*.bin
 /chapter3/section04/*.o
 /chapter3/section04/px86
 /chapter3/section06/*.bin
