@@ -26,3 +26,10 @@
 /chapter3/section12/*.bin
 /chapter3/section12/*.o
 /chapter3/section12/px86
+
+/chapter4/section2/*.bin
+/chapter4/section2/*.o
+/chapter4/section2/px86
+/chapter4/section5/*.o
+/chapter4/section5/boots
+/chapter6/section6/*.bin
