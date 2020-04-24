@@ -25,4 +25,4 @@
 
 ## 連絡先
 
-- [Kenta Arai](https://twitter.com/isKenta14)
+- [Twitter](https://twitter.com/isKenta14)
