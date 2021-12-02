@@ -10,7 +10,7 @@ $(TARGET) : $(OBJS)
 	gcc $^ -o $@
 
 %.o : %.c
-	gcc -c -O2 -o $@ $<
+	gcc -c -O2 -Wall -Wextra -o $@ $<
 
 clean :
 	rm -f $(TARGET) *.o

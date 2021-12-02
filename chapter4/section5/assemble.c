@@ -1,151 +1,103 @@
 #include "assemble.h"
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-static unsigned char
-parseFATType(const char* str);
+#include "fat.h"
 
-static void
-printBPBStructure(const char* str);
-
-static void
-printAssemblyCodeForFAT32(const char* str);
-
-static void
-printAssemblyCodeForFAT16(const char* str);
-
-static void
-printdb(const char* str);
-
-static void
-printdw(const char* str);
-
-static void
-printdd(const char* str);
-
-static void
-printString(const char* str, size_t s);
-
-static void
-printLabel(const char* str);
-
-void
-printAssemblyCode(const char *str) {
-    switch(parseFATType(str)) {
-        case 32:
-            printAssemblyCodeForFAT32(str);
-            break;
-        default:
-            printAssemblyCodeForFAT16(str);
-            break;
-    }
+static void PrintDB(const char *str) {
+  printf("    db %d\n", *(uint8_t *)str);
 }
 
-static unsigned char
-parseFATType(const char *str) {
-    switch(*(uint16_t*)&str[17]) {
-        case 0:
-            return 32;
-        case 512:
-            return 16;
-        default:
-            return 12;
-    }
+static void PrintDW(const char *str) {
+  printf("    dw %d\n", *(uint16_t *)str);
 }
 
-static void
-printAssemblyCodeForFAT32(const char* str) {
-    printBPBStructure(str);
-
-    printdd(&str[36]);
-    printdw(&str[40]);
-    printdw(&str[42]);
-    printdd(&str[44]);
-    printdw(&str[48]);
-    printdw(&str[50]);
-    printf("    times 64 - ($ - $$) db 0\n");
-    printdb(&str[64]);
-    printdb(&str[65]);
-    printdb(&str[66]);
-    printdd(&str[67]);
-    printString(&str[71], 11);
-    printString(&str[82], 8);
-    printLabel("entry");
-    putchar('\n');
-    printf("    times 510 - ($ - $$) db 0\n");
-    printf("    db 0x55, 0xaa\n");
+static void PrintDD(const char *str) {
+  printf("    dd %d\n", *(uint32_t *)str);
 }
 
-static void
-printAssemblyCodeForFAT16(const char* str) {
-    printBPBStructure(str);
-
-    printdb(&str[36]);
-    printdb(&str[37]);
-    printdb(&str[38]);
-    printdd(&str[39]);
-    printString(&str[43], 11);
-    printString(&str[54], 8);
-    printLabel("entry");
-    putchar('\n');
-    printf("    times 510 - ($ - $$) db 0\n");
-    printf("    db 0x55, 0xaa\n");
+static void PrintString(const char *str, size_t s) {
+  printf("    db \"");
+  for (size_t i = 0; i < s; i++) {
+    putchar(str[i]);
+  }
+  printf("\"\n");
 }
 
-static void
-printBPBStructure(const char* str) {
-    if (str[0] == (char)0xEB && str[2] == (char)0x90) {
-        printf("    jmp short entry\n");
-        printf("    nop\n");
-    } else if (str[0] == (char)0xEB) {
-        printf("    jmp entry\n");
-    } else {
-        fprintf(stderr, "Unknown opecode: %02x\n", str[0]);
-        exit(1);
-    }
+static void PrintLabel(const char *str) { printf("%s:\n", str); }
 
-    printString(&str[3], 8);
-    printdw(&str[11]);
-    printdb(&str[13]);
-    printdw(&str[14]);
-    printdb(&str[16]);
-    printdw(&str[17]);
-    printdw(&str[19]);
-    printdb(&str[21]);
-    printdw(&str[22]);
-    printdw(&str[24]);
-    printdw(&str[26]);
-    printdd(&str[28]);
-    printdd(&str[32]);
+static void PrintBPBStructure(const char *str) {
+  if (str[0] == (char)0xEB && str[2] == (char)0x90) {
+    printf("    jmp short entry\n");
+    printf("    nop\n");
+  } else if (str[0] == (char)0xEB) {
+    printf("    jmp entry\n");
+  } else {
+    fprintf(stderr, "Unknown opecode: %02x\n", str[0]);
+    exit(1);
+  }
+
+  PrintString(&str[3], 8);
+  PrintDW(&str[11]);
+  PrintDB(&str[13]);
+  PrintDW(&str[14]);
+  PrintDB(&str[16]);
+  PrintDW(&str[17]);
+  PrintDW(&str[19]);
+  PrintDB(&str[21]);
+  PrintDW(&str[22]);
+  PrintDW(&str[24]);
+  PrintDW(&str[26]);
+  PrintDD(&str[28]);
+  PrintDD(&str[32]);
 }
 
-static void
-printdb(const char* str) {
-    printf("    db %d\n", *(uint8_t*)str);
+static void PrintFAT32AssebmlyCode(const char *str) {
+  PrintBPBStructure(str);
+
+  PrintDD(&str[36]);
+  PrintDW(&str[40]);
+  PrintDW(&str[42]);
+  PrintDD(&str[44]);
+  PrintDW(&str[48]);
+  PrintDW(&str[50]);
+  printf("    times 64 - ($ - $$) db 0\n");
+  PrintDB(&str[64]);
+  PrintDB(&str[65]);
+  PrintDB(&str[66]);
+  PrintDD(&str[67]);
+  PrintString(&str[71], 11);
+  PrintString(&str[82], 8);
+  PrintLabel("entry");
+  putchar('\n');
+  printf("    times 510 - ($ - $$) db 0\n");
+  printf("    db 0x55, 0xaa\n");
 }
 
-static void
-printdw(const char* str) {
-    printf("    dw %d\n", *(uint16_t*)str);
+static void PrintFAT12orFAT16AssemblyCode(const char *str) {
+  PrintBPBStructure(str);
+
+  PrintDB(&str[36]);
+  PrintDB(&str[37]);
+  PrintDB(&str[38]);
+  PrintDD(&str[39]);
+  PrintString(&str[43], 11);
+  PrintString(&str[54], 8);
+  PrintLabel("entry");
+  putchar('\n');
+  printf("    times 510 - ($ - $$) db 0\n");
+  printf("    db 0x55, 0xaa\n");
 }
 
-static void
-printdd(const char* str) {
-    printf("    dd %d\n", *(uint32_t*)str);
-}
-
-static void
-printString(const char* str, size_t s) {
-    printf("    db \"");
-    for (size_t i = 0; i < s; i++) {
-        putchar(str[i]);
-    }
-    printf("\"\n");
-}
-
-static void
-printLabel(const char* str) {
-    printf("%s:\n", str);
+void PrintAssemblyCode(const char *str) {
+  switch (ParseFATType((const struct FATCommonHeader *)str)) {
+  case 32:
+    PrintFAT32AssebmlyCode(str);
+    break;
+  default:
+    PrintFAT12orFAT16AssemblyCode(str);
+    break;
+  }
 }

@@ -3,55 +3,60 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 
-#define HEADER_SIZE_OF_FAT 90
-
-void
-usage(void) {
-    fprintf(stderr, "Usage: boots [--asm] <filename>\n");
+void PrintUsage(void) {
+  fprintf(stderr, "Usage: boots [--asm] <file_path>\n");
 }
 
-int
-main(const int argc, const char **argv) {
-    bool asmValid = false;
-    char *filename;
-
-    if (argc == 2) {
-        filename = (char *)argv[1];
-    } else if (argc == 3) {
-        if (strcmp(argv[1], "--asm")) {
-            usage();
-            return 1;
-        }
-        asmValid = true;
-        filename = (char *)argv[2];
+void ParseOption(const int argc, char **argv, bool *is_assembly_mode,
+                  char **file_path) {
+  switch (argc) {
+  case 2:
+    *is_assembly_mode = false;
+    *file_path = (char *)argv[1];
+    break;
+  case 3:
+    if (strcmp(argv[1], "--asm")) {
+      PrintUsage();
+      exit(1);
     } else {
-        usage();
-        return 1;
+      *is_assembly_mode = true;
+      *file_path = (char *)argv[2];
+      break;
     }
+  default:
+    PrintUsage();
+    exit(1);
+  }
+}
 
-    FILE *fp;
-    char str[HEADER_SIZE_OF_FAT];
+int main(const int argc, char **argv) {
+  bool is_assembly_mode;
+  char *file_path;
 
-    if ((fp = fopen(filename, "rb")) == NULL) {
-        fprintf(stderr, "File `%s` cannot be opened.\n", filename);
-        return 1;
-    }
+  ParseOption(argc, argv, &is_assembly_mode, &file_path);
 
-    if (fread(str, 1, HEADER_SIZE_OF_FAT, fp) != HEADER_SIZE_OF_FAT) {
-        fprintf(stderr, "File size is too small.\n");
-        return 1;
-    }
+  FILE *fp = fopen(file_path, "rb");
+  if (fp == NULL) {
+    fprintf(stderr, "File `%s` cannot be opened.\n", file_path);
+    return 1;
+  }
 
-    fclose(fp);
+  struct FATHeader fat;
+  if (fread(&fat, 1, sizeof fat, fp) != sizeof fat) {
+    fprintf(stderr, "File size is too small.\n");
+    return 1;
+  }
 
-    if (asmValid) {
-        printAssemblyCode(str);
-    } else {
-        printPBR(str);
-    }
+  fclose(fp);
 
-    return 0;
+  if (is_assembly_mode) {
+    PrintAssemblyCode((const char *)&fat);
+  } else {
+    PrintPBR(&fat);
+  }
+
+  return 0;
 }
